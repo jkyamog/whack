@@ -10,13 +10,15 @@ import java.net._
 import java.io._
 import java.util.Map
 
+import org.perf4j.StopWatch
+
 
 class HttpActor extends Actor {
 
   def receive = {
     case (urlStr: String, respValidator: ResponseValidator) => {
-
-      val t1 = System.currentTimeMillis
+      
+      val stopWatch = new StopWatch();
 
       val url = new URL(urlStr)
       val in = url.openStream
@@ -28,11 +30,10 @@ class HttpActor extends Actor {
 
       EventHandler.debug(this, responseStr)
 
-      val t2 = System.currentTimeMillis
-      val totalTime = t2 - t1
+      stopWatch.stop
 
       if (respValidator.validate(responseStr))
-        Stats.addTime(totalTime) // only count validated responses
+        Stats.addTime(stopWatch.getElapsedTime) // only count validated responses
       else
         EventHandler.error(this, "invalid response")
 
