@@ -1,31 +1,35 @@
 package nz.net.catalyst.whack
 
-import akka.stm._
+import akka.agent.Agent
+import akka.actor._
+import scala.concurrent.stm._
 
 object Stats {
+	
+  implicit val system = ActorSystem("app")	
 
-  val ctr = Ref(0)
-  val totalTime = Ref(0l)
+  val ctr = Agent(0)
+  val totalTime = Agent(0l)
 
   def incrCtr {
-    atomic {
-      ctr alter (_ + 1)
+    atomic { txn =>
+      ctr send (_ + 1)
     }
   }
 
   def addTime(time: Long) {
-    atomic {
-      totalTime alter (_ + time)
+    atomic { txn =>
+      totalTime send (_ + time)
       incrCtr
     }
   }
 
   def printStats {
 
-    val currentCtr = atomic {
+    val currentCtr = atomic { txn =>
       ctr.get
     }
-    val currentTotalTime = atomic {
+    val currentTotalTime = atomic { txn =>
       totalTime.get
     }
 
@@ -36,4 +40,16 @@ object Stats {
     }
   }
 
+}
+
+class StatsPrinter extends Actor with ActorLogging {
+
+  def receive = {
+    case "print" => {
+      Stats.printStats
+    }
+
+    case _ => log.warning("received unknown message")
+  }
+	
 }

@@ -3,8 +3,7 @@ package nz.net.catalyst.whack
 import scala.io.Source
 
 import akka._
-import actor.Actor
-import event.EventHandler
+import akka.actor._
 
 import java.net._
 import java.io._
@@ -13,7 +12,7 @@ import java.util.Map
 import org.perf4j.StopWatch
 
 
-class HttpActor extends Actor {
+class HttpActor extends Actor with ActorLogging {
 
   def receive = {
     case (urlStr: String, respValidator: ResponseValidator) => {
@@ -30,18 +29,18 @@ class HttpActor extends Actor {
                                                  () => conn.getInputStream.close())
       val responseStr = response.mkString
 
-      EventHandler.debug(this, responseStr)
+      log.debug(responseStr)
 
       stopWatch.stop
 
       if (respValidator.validate(conn.getResponseCode, responseStr))
         Stats.addTime(stopWatch.getElapsedTime) // only count validated responses
       else
-        EventHandler.error(this, "invalid response")
+        log.error("invalid response")
 
     }
 
-    case _ => EventHandler.warning(this, "received unknown message")
+    case _ => log.warning("received unknown message")
   }
 }
 
