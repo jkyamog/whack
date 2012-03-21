@@ -21,18 +21,20 @@ class HttpActor extends Actor {
       val stopWatch = new StopWatch();
 
       val url = new URL(urlStr)
-      val in = url.openStream
-      val response = Source.createBufferedSource(in, 
+      
+      val conn = url.openConnection.asInstanceOf[HttpURLConnection]
+      
+      val response = Source.createBufferedSource(conn.getInputStream, 
                                                  Source.DefaultBufSize, 
                                                  null, 
-                                                 () => in.close())
+                                                 () => conn.getInputStream.close())
       val responseStr = response.mkString
 
       EventHandler.debug(this, responseStr)
 
       stopWatch.stop
 
-      if (respValidator.validate(responseStr))
+      if (respValidator.validate(conn.getResponseCode, responseStr))
         Stats.addTime(stopWatch.getElapsedTime) // only count validated responses
       else
         EventHandler.error(this, "invalid response")
