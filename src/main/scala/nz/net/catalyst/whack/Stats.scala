@@ -6,7 +6,7 @@ import scala.concurrent.stm._
 
 object Stats {
 	
-  implicit val system = ActorSystem("app")	
+	import HttpRunner.system
 
   val ctr = Agent(0)
   val totalTime = Agent(0l)
@@ -51,5 +51,7 @@ class StatsPrinter extends Actor with ActorLogging {
 
     case _ => log.warning("received unknown message")
   }
+  
+  override def postStop = Stats.printStats
 	
 }
